@@ -1,0 +1,97 @@
+# =============================================================================
+# Universal Market Predictor — Deluxe Edition
+# Central configuration: ticker universe, model hyperparameters, training setup
+# Author: Ahmed Darwish
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# TICKER UNIVERSE
+# Every ticker listed here is part of the SHARED model. Each gets its own
+# learned embedding vector inside one common LSTM backbone. Add new tickers
+# under `pending_new` and run add_new_ticker.py to fold them in later without
+# retraining everyone else from scratch.
+# ---------------------------------------------------------------------------
+universe:
+  stocks:
+    # United States
+    - {ticker: "AAPL",       name: "Apple Inc.",             region: "US"}
+    - {ticker: "MSFT",       name: "Microsoft",               region: "US"}
+    - {ticker: "GOOGL",      name: "Alphabet (Google)",        region: "US"}
+    - {ticker: "AMZN",       name: "Amazon",                   region: "US"}
+    - {ticker: "NVDA",       name: "NVIDIA",                   region: "US"}
+    - {ticker: "TSLA",       name: "Tesla",                    region: "US"}
+    - {ticker: "META",       name: "Meta Platforms",           region: "US"}
+    # Gulf / MENA
+    - {ticker: "2222.SR",    name: "Saudi Aramco",             region: "SA"}
+    - {ticker: "1120.SR",    name: "Al Rajhi Bank",            region: "SA"}
+    - {ticker: "NBK.KW",     name: "National Bank of Kuwait",  region: "KW"}
+    - {ticker: "KFH.KW",     name: "Kuwait Finance House",     region: "KW"}
+    - {ticker: "QNBK.QA",    name: "Qatar National Bank",      region: "QA"}
+    - {ticker: "COMI.CA",    name: "Commercial Intl. Bank",    region: "EG"}
+    - {ticker: "EMAAR.AE",   name: "Emaar Properties",         region: "AE"}
+    # Rest of world
+    - {ticker: "HSBA.L",     name: "HSBC Holdings",            region: "UK"}
+    - {ticker: "BMW.DE",     name: "BMW Group",                region: "DE"}
+    - {ticker: "7203.T",     name: "Toyota Motor",             region: "JP"}
+    - {ticker: "0700.HK",    name: "Tencent Holdings",         region: "HK"}
+    - {ticker: "RELIANCE.NS",name: "Reliance Industries",      region: "IN"}
+
+  crypto:
+    - {ticker: "BTC-USD",  name: "Bitcoin",  region: "CRYPTO"}
+    - {ticker: "ETH-USD",  name: "Ethereum", region: "CRYPTO"}
+    - {ticker: "SOL-USD",  name: "Solana",   region: "CRYPTO"}
+    - {ticker: "BNB-USD",  name: "BNB",      region: "CRYPTO"}
+
+  # Tickers not yet folded into the shared model. Run:
+  #   python add_new_ticker.py --ticker XYZ
+  # to fine-tune just their embedding on top of the frozen shared backbone.
+  pending_new: []
+
+# ---------------------------------------------------------------------------
+# DATA
+# ---------------------------------------------------------------------------
+data:
+  history_period: "10y"        # yfinance period string for training data pull
+  min_rows_required: 400       # skip a ticker if it has fewer usable rows
+  train_fraction: 0.80         # time-ordered split, never shuffled
+
+# ---------------------------------------------------------------------------
+# MODEL ARCHITECTURE
+# ---------------------------------------------------------------------------
+model:
+  look_back: 60                 # days of history fed into the LSTM
+  horizons: [1, 3, 7]            # multi-output forecast horizons (trading days)
+  embedding_dim: 16              # size of each ticker's learned embedding vector
+  lstm_units: [128, 64, 32]      # stacked LSTM layer sizes
+  dropout: [0.25, 0.20, 0.15]
+  dense_units: [32, 16]
+  learning_rate: 0.001
+  loss: "huber"
+
+# ---------------------------------------------------------------------------
+# TRAINING (Colab-oriented)
+# ---------------------------------------------------------------------------
+training:
+  epochs: 60
+  batch_size: 64
+  early_stopping_patience: 8
+  reduce_lr_patience: 4
+  checkpoint_every_n_epochs: 1
+  drive_checkpoint_dir: "/content/drive/MyDrive/universal-market-predictor/checkpoints"
+  local_checkpoint_dir: "checkpoints"
+  artifacts_dir: "model_registry"
+
+# ---------------------------------------------------------------------------
+# FINE-TUNING NEW TICKERS (cold-start)
+# ---------------------------------------------------------------------------
+fine_tune:
+  epochs: 15
+  freeze_backbone: true          # only the new embedding (+ head) trains
+  learning_rate: 0.0005
+
+# ---------------------------------------------------------------------------
+# EVALUATION
+# ---------------------------------------------------------------------------
+evaluation:
+  walk_forward_folds: 5
+  baselines: ["naive_persistence", "moving_average_5", "moving_average_20"]
