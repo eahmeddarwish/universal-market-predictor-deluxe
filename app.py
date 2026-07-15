@@ -19,11 +19,52 @@ Email  : eahmeddarwish@gmail.com
 """
 
 import os
+
+# Must be set BEFORE `import tensorflow`. This Space may run on ZeroGPU
+# hardware, which dynamically attaches/detaches a physical GPU per request --
+# a model TensorFlow's CUDA context was never designed for (it assumes a
+# stable device list for the life of the process, unlike PyTorch, which
+# ZeroGPU is built around). Forcing TF to CPU-only sidesteps that conflict
+# entirely; the shared LSTM here is small enough that CPU inference is
+# already fast, so there's no real GPU speed to give up.
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
+
 import sys
 import numpy as np
 import pandas as pd
 import gradio as gr
 import tensorflow as tf
+
+# Work around a known Keras 3.x regression: this model was saved by a Keras
+# version whose Embedding.get_config() emits a 'quantization_config' key, but
+# the from_config() path used when loading (`cls(**config)`) rejects that
+# key on this installed Keras version, breaking model load entirely with
+# "Unrecognized keyword arguments passed to Embedding: {'quantization_config':
+# None}". Patching Embedding.from_config to drop that key before construction
+# fixes loading without needing to retrain or pin an exact Keras version.
+_orig_embedding_from_config = tf.keras.layers.Embedding.from_config
+
+
+@classmethod
+def _patched_embedding_from_config(cls, config):
+    config = dict(config)
+    config.pop("quantization_config", None)
+    return cls(**config)
+
+
+tf.keras.layers.Embedding.from_config = _patched_embedding_from_config
+
+try:
+    # Only present on Hugging Face Spaces configured with ZeroGPU hardware.
+    # ZeroGPU refuses to start a Space unless at least one function is
+    # decorated with @spaces.GPU -- it's how it knows which calls should get
+    # a temporary GPU attached. Falls back to a no-op decorator everywhere
+    # else (local runs, Colab, CPU-only Spaces) so this file works either way.
+    import spaces
+    gpu_decorator = spaces.GPU
+except ImportError:
+    def gpu_decorator(func):
+        return func
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -107,6 +148,7 @@ def _cold_start_ticker(ticker: str, ds, progress_cb=None):
 PLACEHOLDER_PRESET = "(type custom ticker below)"
 
 
+@gpu_decorator
 def run_analysis(ticker_input, preset_choice, horizon_days, progress=gr.Progress()):
     preset_choice = preset_choice if preset_choice != PLACEHOLDER_PRESET else None
     ticker = (ticker_input or "").strip().upper() or preset_choice
