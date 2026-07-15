@@ -36,23 +36,28 @@ import gradio as gr
 import tensorflow as tf
 
 # Work around a known Keras 3.x regression: this model was saved by a Keras
-# version whose Embedding.get_config() emits a 'quantization_config' key, but
-# the from_config() path used when loading (`cls(**config)`) rejects that
-# key on this installed Keras version, breaking model load entirely with
-# "Unrecognized keyword arguments passed to Embedding: {'quantization_config':
-# None}". Patching Embedding.from_config to drop that key before construction
-# fixes loading without needing to retrain or pin an exact Keras version.
-_orig_embedding_from_config = tf.keras.layers.Embedding.from_config
+# version whose layer get_config() emits a 'quantization_config' key, but the
+# from_config() path used when loading (`cls(**config)`) rejects that key on
+# this installed Keras version -- "Unrecognized keyword arguments passed to
+# <Layer>: {'quantization_config': None}". It hits EVERY layer type that
+# doesn't override from_config itself (Embedding, then Dense, then whichever
+# layer comes next), because they all fall through to the same base
+# implementation. Patching per-layer-type is whack-a-mole, so patch that one
+# shared base class instead -- fixes every layer at once, present and future.
+_layer_bases = [c for c in tf.keras.layers.Dense.__mro__ if c.__name__ == "Operation"]
+_OperationBase = _layer_bases[0] if _layer_bases else None
 
+if _OperationBase is not None:
+    _orig_operation_from_config = _OperationBase.from_config.__func__
 
-@classmethod
-def _patched_embedding_from_config(cls, config):
-    config = dict(config)
-    config.pop("quantization_config", None)
-    return cls(**config)
+    @classmethod
+    def _patched_operation_from_config(cls, config):
+        if isinstance(config, dict) and "quantization_config" in config:
+            config = dict(config)
+            config.pop("quantization_config", None)
+        return _orig_operation_from_config(cls, config)
 
-
-tf.keras.layers.Embedding.from_config = _patched_embedding_from_config
+    _OperationBase.from_config = _patched_operation_from_config
 
 try:
     # Only present on Hugging Face Spaces configured with ZeroGPU hardware.
