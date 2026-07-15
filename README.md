@@ -3,7 +3,7 @@
 # 📈 Universal Market Predictor — Deluxe Edition
 
 ### One shared LSTM, every ticker, honest evaluation
-### نموذج LSTM واحد مشترك، لكل الأسهم، بتقييم صادق
+### نموذج LSTM موحّد لجميع الأسهم، بتقييمٍ يقوم على الصدق والشفافية
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15+-FF6F00?logo=tensorflow&logoColor=white)](https://tensorflow.org)
@@ -29,10 +29,10 @@ every time.
 
 **[العربية]**
 هذا المشروع إعادة بناء لمشروع [universal-market-predictor](https://github.com/eahmeddarwish/universal-market-predictor)،
-مبني على فكرة واحدة: **نظام التوقع مش أوثق من المقياس المرجعي اللي بيتقارن
-بيه.** كل رقم بيُنتجه المشروع ده بيتعرض جنب مقياس مرجعي "من غير أي ذكاء
-اصطناعي"، والمعمارية مبنية عشان تكبر (أسهم جديدة، بورصات جديدة، عملات رقمية
-جديدة) من غير ما تحتاج إعادة تدريب من الصفر في كل مرة.
+قائمٌ على فكرةٍ واحدة: **لا يفوق نظام التنبؤ في مصداقيته المقياسَ المرجعي
+الذي يُقارَن به.** فكل رقمٍ يُنتجه هذا المشروع يُعرض إلى جانب مقياسٍ مرجعي
+"لا يقوم بأي شيء"، والبنية مصمَّمة بحيث تتّسع (أسهمٌ جديدة، بورصاتٌ جديدة،
+عملاتٌ رقمية جديدة) دون الحاجة إلى إعادة التدريب من الصفر في كل مرة.
 
 ---
 
@@ -41,16 +41,16 @@ every time.
 | | Original / الأصلي | Deluxe |
 |---|---|---|
 | Training / التدريب | On-demand, every request (1-2 min wait) | Pretrained offline (Colab/local), instant inference |
-| Model / الموديل | One separate LSTM per ticker | **One shared LSTM backbone + per-ticker embeddings** |
-| Forecast horizon / أفق التوقع | Next day only | **1 / 3 / 7 trading days**, direct multi-output (not recursive) |
+| Model / النموذج | One separate LSTM per ticker | **One shared LSTM backbone + per-ticker embeddings** |
+| Forecast horizon / أفق التنبؤ | Next day only | **1 / 3 / 7 trading days**, direct multi-output (not recursive) |
 | Evaluation / التقييم | Raw MAE/MAPE/R² only | Same metrics **plus a naive-persistence & moving-average baseline on every single prediction, plus a statistical significance test on directional accuracy** |
-| Backtesting / الاختبار الخلفي | Single train/test split | Single split + **chronological walk-forward folds** to catch regime-dependent failure |
+| Backtesting / الاختبار الرجعي | Single train/test split | Single split + **chronological walk-forward folds** to catch regime-dependent failure |
 | New tickers / أسهم جديدة | Not supported without retraining everything | **Cold-start fine-tuning**: freeze the backbone, train only the new ticker's embedding row |
 | Cache / التخزين المؤقت | Ephemeral, resets on restart | Model is a versioned artifact in `model_registry/`, meant to be committed/shipped |
 
 ---
 
-## 🎯 Why Compare Against a Baseline at All? | ليه لازم نقارن بمقياس مرجعي أصلاً؟
+## 🎯 Why Compare Against a Baseline at All? | لماذا نُقارَن أصلًا بمقياسٍ مرجعي؟
 
 **[English]**
 Tomorrow's closing price for a large, liquid stock is *usually* close to
@@ -69,22 +69,22 @@ every training report surface this comparison directly; nothing is hidden
 behind a single "our model got 98% accuracy!" headline number.
 
 **[العربية]**
-سعر إغلاق الغد لسهم كبير وسائل التداول فيه عالي بيكون *عادةً* قريب جدًا من
-سعر إغلاق النهاردة. ده معناه إن أي موديل — حتى لو مفيدوش أي حاجة فعلًا —
-ممكن يطلّع رقم MAPE يبان كويس بس لأنه مستفيد من الحقيقة دي. الطريقة الوحيدة
-عشان نعرف لو الـLSTM اتعلم حاجة حقيقية هي إننا نحط الخطأ بتاعه ودقة اتجاهه
-جنب:
+عادةً ما يكون سعر إغلاق الغد، بالنسبة لسهمٍ كبيرٍ وذي سيولةٍ عالية، قريبًا
+جدًا من سعر إغلاق اليوم. وهذا يعني أن أي نموذج — حتى لو كان عديم الفائدة
+فعلًا — يمكن أن يُظهر قيمة MAPE تبدو مُرضية لمجرّد اعتماده على هذه الحقيقة.
+والطريقة الوحيدة لمعرفة ما إذا كان هذا النموذج (LSTM) قد تعلّم شيئًا حقيقيًا
+هي وضع خطئه ودقة اتجاهه مباشرةً إلى جانب:
 
-- **`naive_persistence`** — التنبؤ بسعر الغد = سعر النهاردة، من غير أي تعلم آلي
-- **`moving_average_5` / `moving_average_20`** — التنبؤ بمتوسط الأيام الأخيرة، برضه من غير تعلم آلي
+- **`naive_persistence`** — التنبؤ بأن سعر الغد يساوي سعر اليوم، دون أي تعلّم آلي
+- **`moving_average_5` / `moving_average_20`** — التنبؤ بمتوسط الأيام الأخيرة، دون تعلّم آلي أيضًا
 
-لو `shared_lstm` مش متفوق بوضوح على `naive_persistence` في تكر/أفق معين —
-خصوصًا في **دقة الاتجاه**، حيث 50% معناها رمي عملة معدنية — النتيجة دي
-لازم تتعامل معاها كضوضاء مش كإشارة حقيقية. التطبيق وكل تقرير تدريب بيعرضوا
-المقارنة دي مباشرة؛ مفيش حاجة مخبّية وراء رقم واحد براق زي "الموديل حقق
-دقة 98%!".
+فإذا لم يتفوّق `shared_lstm` بوضوح على `naive_persistence` في تكرٍ/أفقٍ
+معيّن — خصوصًا في **دقة الاتجاه**، حيث تمثّل نسبة 50% رميةَ عملةٍ معدنية
+بحتة — فإن هذه النتيجة ينبغي التعامل معها بوصفها ضوضاء لا إشارةً حقيقية.
+يعرض التطبيق، وكذلك كل تقرير تدريب، هذه المقارنة مباشرةً؛ فلا شيء يُخفى وراء
+رقمٍ واحدٍ برّاق من نوع "حقق النموذج دقة 98%!".
 
-### 🔬 Is a Directional Edge Even Real, or Just Noise? | هل ميزة الاتجاه حقيقية فعلًا ولا مجرد ضوضاء؟
+### 🔬 Is a Directional Edge Even Real, or Just Noise? | هل تُعدّ ميزة الاتجاه حقيقيةً فعلًا، أم أنها مجرّد ضوضاء؟
 
 **[English]**
 A real training run on this project surfaced a second, subtler version of
@@ -106,21 +106,23 @@ instead of requiring the reader to hunt down the baseline row and subtract
 by hand.
 
 **[العربية]**
-تدريب فعلي على المشروع ده كشف نسخة تانية وأدق من نفس مشكلة "متصدقش رقم
-براق": `shared_lstm` طلّع دقة اتجاه حوالي 52-58% في عدة أسهم، جنب مقاييس
-مرجعية قريبة من خط الـ50% (رمي العملة). فرق نقطتين أو تلاتة فوق الـ50% على
-كام مية نافذة اختبار ممكن يكون بسهولة ضوضاء إحصائية مش ميزة حقيقية — فـ
-`comparison_report.csv` دلوقتي بيشغّل اختبار binomial ثنائي الطرف ضد فرضية
-الـ50% على كل صف `shared_lstm`، بالإضافة لفترة ثقة Wilson بنسبة 95%
-(`Direction_CI_95`، `Direction_p_value`، `Direction_Significant` في
-`src/evaluation.py::direction_significance`). متعاملش مع دقة اتجاه أي
-تكر/أفق كنتيجة حقيقية إلا لو `Direction_Significant` كانت `True` — يعني
-فترة الثقة 95% مش شاملة الـ50% خالص. التقرير كمان بيضيف `R2_vs_naive` (R²
-بتاع كل طريقة ناقص R² بتاع `naive_persistence` لنفس التكر/الأفق بالظبط)،
-لأن R² عالي على سعر الغد غالبًا انعكاس طبيعي لارتباط السعر الذاتي مش دليل
-على مهارة تنبؤية حقيقية، والقيمة المضافة الحقيقية عن "عدم فعل أي حاجة"
-لازم تكون واضحة مباشرة من غير ما القارئ يدور على صف المقياس المرجعي
-ويطرح بنفسه.
+كشف تدريبٌ فعلي على هذا المشروع عن نسخةٍ ثانية وأدقّ من المشكلة ذاتها: "لا
+تُصدّق رقمًا برّاقًا". فقد أظهر `shared_lstm` دقة اتجاهٍ تتراوح بين 52%
+و58% تقريبًا في عدة أسهم، إلى جانب مقاييس مرجعية تقترب من خط الـ50% (رمية
+العملة). وفرقٌ من نقطتين أو ثلاث فوق الـ50%، على بضع مئاتٍ من نوافذ
+الاختبار، قد يكون بسهولة ضوضاء إحصائية لا ميزةً حقيقية — لذلك يُجري
+`comparison_report.csv` الآن اختبارًا ثنائي الطرف من نوع binomial ضد فرضية
+الـ50% على كل صفٍّ من صفوف `shared_lstm`، إضافةً إلى فترة ثقة Wilson بنسبة
+95% (`Direction_CI_95`، `Direction_p_value`، `Direction_Significant` في
+`src/evaluation.py::direction_significance`). ولا ينبغي التعامل مع دقة
+اتجاه أي تكرٍ/أفقٍ باعتبارها نتيجةً حقيقية إلا إذا كانت قيمة
+`Direction_Significant` تساوي `True` — أي أن فترة الثقة بنسبة 95% لا تشمل
+الـ50% إطلاقًا. كما يضيف التقرير عمود `R2_vs_naive` (قيمة R² لكل طريقة
+مطروحًا منها R² الخاصة بـ`naive_persistence` لنفس التكر والأفق بالضبط) في
+كل صف، ذلك أن ارتفاع قيمة R² المطلقة على سعر الغد غالبًا ما يكون انعكاسًا
+طبيعيًا للارتباط الذاتي للسعر، لا دليلًا على مهارة تنبؤية حقيقية، وينبغي أن
+تكون القيمة الحقيقية المضافة مقارنةً بعدم فعل أي شيء واضحةً بشكلٍ مباشر،
+دون أن يضطر القارئ إلى البحث عن صف المقياس المرجعي وطرح القيم يدويًا.
 
 ---
 
@@ -150,7 +152,7 @@ universal-market-predictor-deluxe/
     └── metrics/*.csv
 ```
 
-### The Shared Model, Visually | الموديل المشترك بصريًا
+### The Shared Model, Visually | النموذج المشترك بصريًا
 
 ```
 price_sequence (60 days × 12 features)     ticker_id
@@ -172,11 +174,12 @@ single ticker's own history could teach it. The embedding lets the model
 specialize its output per asset without needing a separate network per
 asset.
 
-**ليه موديل مشترك، مش موديل منفصل لكل تكر:**
-الـbackbone بيشوف سلوك السوق عبر كل سهم وبورصة وعملة رقمية في الكون
-المُدرّب عليه — انهيارات، صعودات، تجمعات تقلب — أكتر بكتير مما يقدر تاريخ
-أي تكر بمفرده يعلّمه. الـembedding بيخلي الموديل يخصص مخرجاته لكل أصل من
-غير ما يحتاج شبكة منفصلة لكل أصل.
+**لماذا نموذجٌ مشترك، لا نموذجٌ منفصل لكل تكر:**
+يرى العمود الفقري للنموذج (backbone) سلوك السوق عبر كل سهمٍ وبورصةٍ وعملةٍ
+رقمية في النطاق المُدرَّب عليه — الانهيارات، والصعودات، وتجمّعات التقلّب —
+بما يفوق كثيرًا ما يستطيع تاريخ أي تكرٍ بمفرده أن يُعلّمه إياه. أما
+الـembedding فيتيح للنموذج تخصيص مخرجاته لكل أصلٍ على حدة، دون الحاجة إلى
+شبكةٍ منفصلة لكل أصل.
 
 **Why multi-output instead of recursive:**
 predicting day+1 and then feeding that prediction back in as "day+1's
@@ -185,11 +188,12 @@ went wrong in the earlier prototype scripts — see the "very bad results"
 iterations in the project history). A single forward pass emitting all
 horizons at once avoids that entirely.
 
-**ليه multi-output مش recursive:**
-التنبؤ بيوم+1 وبعدين تغذية التنبؤ ده تاني كـ"السعر الفعلي ليوم+1" عشان
-تتنبأ بيوم+2 بيراكم الخطأ بسرعة (ده بالظبط اللي حصل غلط في السكريبتات
-الأولية للمشروع — شوف تكرارات "النتائج السيئة جدًا" في تاريخ المشروع).
-تمريرة واحدة للأمام بتُخرج كل الآفاق مرة واحدة بتتجنب المشكلة دي خالص.
+**لماذا الإخراج المتعدد (multi-output) لا الأسلوب التكراري (recursive):**
+إن التنبؤ باليوم+1 ثم إعادة تغذية ذلك التنبؤ كما لو كان "السعر الفعلي
+لليوم+1" للتنبؤ باليوم+2 يُراكم الخطأ بسرعة (وهذا بالضبط ما حدث خطأً في
+النصوص البرمجية الأولية للمشروع — انظر تكرارات "النتائج السيئة جدًا" في
+تاريخ المشروع). أما التمريرة الأمامية الواحدة التي تُخرج جميع الآفاق دفعةً
+واحدة، فتتجنّب هذه المشكلة كليًا.
 
 **Why the model predicts a % return, not a scaled price (a real bug we hit
 and fixed):**
@@ -214,26 +218,29 @@ This is the evaluation methodology (see above) doing exactly its job:
 catching a model that looked reasonable in isolation but was actually worse
 than doing nothing, before anyone trusted it.
 
-**ليه الموديل بيتنبأ بنسبة عائد مئوية، مش سعر معاير (باج حقيقي واجهناه
+**لماذا يتنبأ النموذج بنسبة عائدٍ مئوية، لا بسعرٍ مُعايَر (خللٌ حقيقي واجهناه
 وأصلحناه):**
-أول نسخة كاملة التدريب من المشروع كانت بتتنبأ مباشرة بسعر إغلاق معاير
-بـMinMax، وتدريب فعلي كشف المشكلة على طول — في أسهم صاعدة زي AAPL/MSFT،
-`shared_lstm` خسر بشدة قدام مقياس `naive_persistence` (MAE أعلى، وR² سالب).
-السبب: كل تكر عنده scaler خاص بيتدرب بس على فترة التدريب بتاعته (بالتصميم،
-عشان نتجنب تسرب معلومات مستقبلية)، فبعد 10 سنين من الاتجاه الصاعد، أسعار
-فترة الاختبار كانت خارج نطاق [0,1] اللي الموديل شافه أصلًا — كان مطلوب منه
-يستقرئ (extrapolate) بشكل أعمى. الإصلاح فيه جزئين:
-1. كل ميزة مدخلة للموديل (`src/indicators.py`) دلوقتي متعبّرة كنسبة أو
-   مئوية محدودة (`MACD_pct`، `BB_Upper_pct`، `ATR_pct`، `Price_vs_MA20`،
-   إلخ) بدل مستوى سعر/حجم تداول خام، عشان مفيش حاجة داخلة للشبكة تخرج عن
-   النطاق مع نمو سعر التكر.
-2. الهدف نفسه بقى نسبة عائد مئوية —
-   `(Close[t+h] - Close[t]) / Close[t]` — بيترجع لسعر وقت الاستدلال بـ
-   `anchor_price * (1 + predicted_return)`
-   (`src/dataset.py::return_to_price`)، مش عن طريق عكس الـscaler.
+كانت أوّل نسخةٍ مُدرَّبة بالكامل من هذا المشروع تتنبأ مباشرةً بسعر إغلاقٍ
+مُعايَرٍ بطريقة MinMax، وقد كشف تدريبٌ فعلي عن المشكلة على الفور — ففي
+أسهمٍ ذات اتجاهٍ صاعد مثل AAPL وMSFT، خسر `shared_lstm` خسارةً فادحة أمام
+مقياس `naive_persistence` (قيمة MAE أعلى، وR² سالبة). والسبب: أن لكل تكرٍ
+مقياس معايرة (scaler) خاصًا به يُدرَّب فقط على فترة التدريب الخاصة به (وهذا
+بالتصميم، تجنّبًا لتسرّب معلوماتٍ مستقبلية)، فبعد عشر سنواتٍ من الاتجاه
+الصاعد، وقعت أسعار فترة الاختبار خارج النطاق [0,1] الذي شهده النموذج من
+قبل — أي أنه كان مطالَبًا بالاستقراء (extrapolation) بصورةٍ عمياء. ويتألف
+الإصلاح من جزأين:
+1. أصبحت كل ميزةٍ من الميزات المُدخَلة إلى النموذج (`src/indicators.py`)
+   تُعبَّر الآن كنسبةٍ أو قيمةٍ مئويةٍ محدودة (`MACD_pct`، `BB_Upper_pct`،
+   `ATR_pct`، `Price_vs_MA20`، وغيرها) بدلًا من مستوى سعرٍ أو حجم تداولٍ
+   خام، بحيث لا يخرج أي مُدخَلٍ للشبكة عن نطاقه مع نمو سعر التكر.
+2. أصبح الهدف نفسه نسبة عائدٍ مئوية —
+   `(Close[t+h] - Close[t]) / Close[t]` — تُعاد إلى صورة سعرٍ وقت الاستدلال
+   عبر `anchor_price * (1 + predicted_return)`
+   (`src/dataset.py::return_to_price`)، لا عبر عكس تحويل المقياس (scaler).
 
-ده بالظبط منهجية التقييم (شوف فوق) بتعمل شغلها: بتمسك موديل كان شكله معقول
-لوحده لكن كان في الحقيقة أسوأ من عدم فعل أي حاجة، قبل ما حد يثق فيه.
+وهذا بالضبط ما تقوم به منهجية التقييم (انظر أعلاه) على أكمل وجه: ضبط نموذجٍ
+بدا معقولًا حين يُنظر إليه بمعزلٍ عن غيره، بينما كان في الحقيقة أسوأ من عدم
+فعل أي شيء، قبل أن يثق فيه أحد.
 
 **Cold-start for new tickers, without a full retrain:**
 `add_new_ticker.py` freezes every layer except the ticker-embedding table,
@@ -244,19 +251,20 @@ ticker's id, this is mathematically guaranteed not to disturb any other
 ticker's learned embedding. The new ticker is folded into the live model in
 minutes, not by retraining the whole system.
 
-**بدء بارد (Cold-start) لأسهم جديدة، من غير إعادة تدريب كاملة:**
-`add_new_ticker.py` بيجمّد كل الطبقات ما عدا جدول ticker-embedding، وبعدين
-بيعمل fine-tuning بس على بيانات التكر الجديد. لأن تدرجات Keras embedding
-تفرّقية (sparse) — بس الصف اللي اتبحث عنه فعلًا في الدفعة (batch) هو اللي
-بيتحدّث — وكل دفعة fine-tuning هنا بتحتوي بس على معرّف التكر الجديد، ده
-مضمون رياضيًا إنه مش هيأثر على أي embedding اتعلمه تكر تاني. التكر الجديد
-بينضم للموديل الحي في دقائق، مش عن طريق إعادة تدريب النظام كله.
+**بدءٌ باردٌ (Cold-start) لأسهمٍ جديدة، دون إعادة تدريبٍ كاملة:**
+يُجمِّد `add_new_ticker.py` جميع الطبقات باستثناء جدول ticker-embedding، ثم
+يُجري ضبطًا دقيقًا (fine-tuning) يقتصر على بيانات التكر الجديد فحسب. ولأن
+تدرّجات طبقة الـembedding في Keras متفرّقة (sparse) — إذ لا يُحدَّث سوى
+الصف الذي جرى استدعاؤه فعليًا ضمن الدفعة (batch) — وبما أن كل دفعةٍ من
+دفعات الضبط الدقيق هنا لا تحتوي إلا على معرّف التكر الجديد، فإن ذلك
+مضمونٌ رياضيًا ألّا يمسّ أي embedding تعلّمه تكرٌ آخر. وهكذا ينضم التكر
+الجديد إلى النموذج الحي في دقائق معدودة، دون إعادة تدريب النظام بأكمله.
 
 ---
 
 ## 🚀 Quick Start | البدء السريع
 
-### 1. Train the shared model (Google Colab, free GPU) | تدريب الموديل المشترك (Google Colab، GPU مجاني)
+### 1. Train the shared model (Google Colab, free GPU) | تدريب النموذج المشترك (Google Colab، وحدة معالجة رسومية مجانية)
 
 Open `notebooks/train_on_colab.ipynb` in Colab, or from a terminal:
 
@@ -270,10 +278,10 @@ Training is **resumable** — if a Colab session disconnects, just re-run;
 dir, saved every `checkpoint_every_n_epochs` epochs per `config.yaml`)
 instead of starting over.
 
-التدريب **قابل للاستكمال** — لو جلسة Colab اتقطعت، شغّل السكريبت تاني؛
-`train.py` بيكمل من آخر checkpoint (فولدر `model_registry`/checkpoint،
-بيتحفظ كل `checkpoint_every_n_epochs` حسب `config.yaml`) بدل ما يبدأ من
-الأول.
+التدريب **قابلٌ للاستئناف** — إذا انقطعت جلسة Colab، يكفي إعادة تشغيل النص
+البرمجي؛ إذ يستكمل `train.py` العمل من آخر نقطة حفظ (checkpoint) (داخل
+مجلد `model_registry`/checkpoint، الذي يُحفَظ كل `checkpoint_every_n_epochs`
+حسب `config.yaml`) بدلًا من البدء من جديد.
 
 ### 2. Run the app locally | تشغيل التطبيق محليًا
 
@@ -283,7 +291,7 @@ python app.py
 
 Open `http://localhost:7860`.
 
-### 3. Add a new ticker later, without retraining everything | إضافة تكر جديد لاحقًا، من غير إعادة تدريب كل حاجة
+### 3. Add a new ticker later, without retraining everything | إضافة تكرٍ جديد لاحقًا، دون إعادة تدريب كل شيء
 
 ```bash
 python add_new_ticker.py --ticker 2010.SR --name "SABIC" --region SA
@@ -292,12 +300,12 @@ python add_new_ticker.py --ticker 2010.SR --name "SABIC" --region SA
 Then add it to `config.yaml`'s `universe` list too, so the *next* full
 retrain includes it from scratch as well.
 
-بعد كده ضيفه لقائمة `universe` في `config.yaml` كمان، عشان *إعادة التدريب
-الكاملة الجاية* تشمله من الصفر برضه.
+ثم أضِفه أيضًا إلى قائمة `universe` في `config.yaml`، حتى تشمله *إعادة
+التدريب الكاملة القادمة* من الصفر كذلك.
 
 ---
 
-## 🌐 Ticker Universe | كون الأسهم
+## 🌐 Ticker Universe | نطاق الأسهم المدعومة
 
 **[English]**
 Configured in `config.yaml`. Ships with US large caps, Gulf/MENA exchanges
@@ -306,18 +314,19 @@ UK/Germany/Japan/Hong Kong/India, and major cryptocurrencies. Add or remove
 tickers there and re-run `train.py`.
 
 **[العربية]**
-معرّف في `config.yaml`. المشروع بيجي مزوّد بأسهم أمريكية كبيرة، بورصات
-الخليج/الشرق الأوسط (تداول، بورصة الكويت، بورصة قطر، سوق دبي المالي، البورصة
-المصرية)، بريطانيا/ألمانيا/اليابان/هونج كونج/الهند، وأهم العملات الرقمية.
-ضيف أو احذف تكرات من هناك وشغّل `train.py` تاني.
+مُعرَّفٌ في `config.yaml`. يأتي المشروع مزوَّدًا بأسهمٍ أمريكيةٍ كبرى،
+وبورصات الخليج والشرق الأوسط (تداول، بورصة الكويت، بورصة قطر، سوق دبي
+المالي، البورصة المصرية)، إضافةً إلى بريطانيا وألمانيا واليابان وهونغ كونغ
+والهند، وأبرز العملات الرقمية. أضِف التكرات أو احذفها من هناك، ثم أعِد
+تشغيل `train.py`.
 
 **Gulf/Egypt tickers were verified individually against live Yahoo Finance
 data** (some exchanges have inconsistent `yfinance` coverage, so a
 plausible-looking symbol can silently return nothing):
 
-**رموز الخليج/مصر اتّتأكد منها فرديًا مقابل بيانات Yahoo Finance الحية**
-(بعض البورصات تغطيتها في `yfinance` مش ثابتة، فرمز شكله معقول ممكن يرجّع
-فراغ من غير أي تنبيه):
+**تم التحقق من رموز الخليج ومصر فرديًا مقابل بيانات Yahoo Finance الحيّة**
+(تغطية بعض البورصات في `yfinance` غير مستقرة، فقد يُرجع رمزٌ يبدو معقولًا
+نتيجةً فارغة دون أي تنبيه):
 
 | Ticker / الرمز | Company / الشركة | Exchange / البورصة |
 |---|---|---|
@@ -333,13 +342,13 @@ Two symbols in earlier versions of this project didn't actually resolve on
 Yahoo Finance and were replaced: `NBKK.KW` → `NBK.KW`, and `FAB.AD` (First
 Abu Dhabi Bank isn't on Yahoo Finance at all) → `EMAAR.AE`.
 
-رمزين في نسخ سابقة من المشروع مكانوش بيترجموا فعليًا على Yahoo Finance
-واتستبدلوا: `NBKK.KW` → `NBK.KW`، و`FAB.AD` (بنك أبوظبي الأول مش موجود
-على Yahoo Finance خالص) → `EMAAR.AE`.
+رمزان في نسخٍ سابقة من هذا المشروع لم يكونا في الحقيقة يُترجَمان على Yahoo
+Finance، فاستُبدلا: `NBKK.KW` ← `NBK.KW`، و`FAB.AD` (إذ إن بنك أبوظبي
+الأول غير موجود على Yahoo Finance إطلاقًا) ← `EMAAR.AE`.
 
 ---
 
-## ⚠️ Honest Limitations | قيود صادقة
+## ⚠️ Honest Limitations | القيود الصادقة
 
 **[English]**
 - **Walk-forward evaluation here re-evaluates the one trained model across
@@ -373,43 +382,47 @@ Abu Dhabi Bank isn't on Yahoo Finance at all) → `EMAAR.AE`.
   advice. Markets involve real risk.
 
 **[العربية]**
-- **تقييم walk-forward هنا بيعيد تقييم الموديل المتدرب الواحد عبر فترات
-  زمنية متتالية من مجموعة الاختبار — مش بيعيد تدريب الموديل لكل فترة.**
-  إعادة تدريب walk-forward حقيقية (إعادة تدريب في كل نافذة متحركة) هتكون
-  أدق بكتير لكن بطيئة جدًا عشان تتنفذ على كون كامل من الأسهم على GPU مجاني
-  في Colab. ده اختيار مقصود وموثّق، مش سهو.
-- **بيانات OHLCV اليومية + المؤشرات الفنية بتحمل إشارة تنبؤية محدودة
-  لوحدها.** مفيش بيانات أخبار أو معنويات أو ماكرو أو تدفق أوامر مستخدمة
-  لسه (شوف خطة التطوير). تعامل مع دقة اتجاه في الخمسينات العليا كميزة
-  متواضعة، مش كنظام تداول.
-- **موديل بيخسر قدام `naive_persistence` هي نتيجة حقيقية ومتوقعة، مش باج
-  نخبيه.** المشروع ده أصلًا مسك حالة زي كده أثناء التطوير (معايرة السعر
-  الخام على أسهم صاعدة — دلوقتي متصلحة، شوف المعمارية فوق). شغّل تقرير
-  المقارنة بعد كل إعادة تدريب واقرأه فعلًا قبل ما تثق في أي تنبؤ.
-- **ميزة الاتجاه حقيقية في بعض الأسهم، غايبة في تانية — وأضعف حاجة تحديدًا
-  في أسهم الخليج.** تدريب فعلي على 23 تكر أظهر ميزة اتجاهية مميزة إحصائيًا
-  (شوف "هل ميزة الاتجاه حقيقية؟" فوق) في عدة أسهم أمريكية/بريطانية كبيرة
-  (`HSBA.L`، `AAPL`، `GOOGL`، `NVDA`، `AMZN`، `MSFT`)، لكن `2222.SR` (أرامكو
-  السعودية)، `NBK.KW`، و`KFH.KW` طلعوا عند أو تحت خط الـ50% (رمي العملة)،
-  مع MAE أسوأ من `naive_persistence` بـ3.5-8% كمان. السبب المرجّح: بيانات
-  تدريب الـbackbone المشترك لسه غالبيتها أمريكية/أوروبية، فأسهم الخليج
-  نسبيًا "خارج التوزيع" بالنسبة له، فوق إن تاريخ تداولها أقصر وأقل كثافة من
-  الأسهم العملاقة. ده متوثّق هنا عمدًا بدل ما يتصلح، — راجع
-  `comparison_report.csv` بعد كل إعادة تدريب بدل افتراض إن الأداء موحّد عبر
-  كل الكون.
-- **ده مشروع بحثي/تعليمي.** مفيش حاجة هنا نصيحة مالية. الأسواق المالية فيها
-  مخاطرة حقيقية.
+- **يُعيد تقييم walk-forward هنا تقييم النموذج المُدرَّب الواحد عبر فتراتٍ
+  زمنيةٍ متتالية من مجموعة الاختبار — ولا يُعيد تدريب النموذج في كل فترة.**
+  إن إعادة التدريب الحقيقية بأسلوب walk-forward (أي إعادة التدريب عند كل
+  نافذةٍ متحركة) ستكون أكثر دقةً بكثير، لكنها بطيئة للغاية بحيث يتعذّر
+  تنفيذها على كامل نطاق الأسهم باستخدام وحدة معالجة رسومية مجانية في Colab.
+  وهذا خيارٌ مقصودٌ وموثَّق، لا سهو.
+- **تحمل بيانات OHLCV اليومية والمؤشرات الفنية إشارةً تنبؤيةً محدودة
+  بمفردها.** لا تُستخدم حتى الآن بيانات الأخبار أو المعنويات أو المؤشرات
+  الكلية أو تدفّق الأوامر (انظر خطة التطوير). تعامَل مع دقة اتجاهٍ في
+  النطاق العلوي من الخمسينيات بالمئة باعتبارها ميزةً متواضعة، لا نظام
+  تداول.
+- **كون النموذج يخسر أمام `naive_persistence` نتيجةٌ حقيقيةٌ ومتوقّعة، لا
+  خللًا يجب إخفاؤه.** وقد رصد هذا المشروع بالفعل حالةً كهذه أثناء التطوير
+  (معايرة السعر الخام في أسهمٍ صاعدة — وقد أُصلحت الآن، انظر قسم المعمارية
+  أعلاه). شغِّل تقرير المقارنة بعد كل إعادة تدريب، واقرأه فعليًا قبل
+  الوثوق بأي تنبؤ.
+- **ميزة الاتجاه حقيقيةٌ في بعض الأسهم، وغائبةٌ في أسهمٍ أخرى — وهي في
+  أضعف حالاتها في أسهم الخليج تحديدًا.** أظهر تدريبٌ فعليٌّ على 23 تكرًا
+  ميزةً اتجاهيةً مميّزةً إحصائيًا (انظر "هل تُعدّ ميزة الاتجاه حقيقيةً
+  فعلًا؟" أعلاه) في عدة أسهمٍ أمريكيةٍ وبريطانيةٍ كبرى (`HSBA.L`، `AAPL`،
+  `GOOGL`، `NVDA`، `AMZN`، `MSFT`)، بينما جاءت `2222.SR` (أرامكو السعودية)
+  و`NBK.KW` و`KFH.KW` عند خط الـ50% (رمية العملة) أو دونه، مع قيمة MAE
+  أسوأ من `naive_persistence` بنسبة 3.5-8% أيضًا. والسبب المُرجَّح: أن
+  بيانات تدريب العمود الفقري المشترك لا تزال أغلبها أمريكيًا وأوروبيًا، ما
+  يجعل أسهم الخليج "خارج نطاق التوزيع" نسبيًا بالنسبة إليه، إضافةً إلى أن
+  تاريخ تداولها أقصر وأقل كثافةً من الأسهم العملاقة. وقد جرى توثيق هذا
+  الأمر هنا عمدًا بدلًا من إصلاحه — فراجع `comparison_report.csv` بعد كل
+  إعادة تدريب، بدلًا من افتراض أن الأداء موحّدٌ عبر كامل نطاق الأسهم.
+- **هذا مشروعٌ بحثيٌّ وتعليمي.** لا شيء هنا يُعدّ نصيحةً مالية. تنطوي
+  الأسواق المالية على مخاطرةٍ حقيقية.
 
 ---
 
 ## 🗺️ Roadmap | خطة التطوير
 
-- [x] Shared multi-ticker model with embeddings + multi-horizon forecasting / موديل مشترك متعدد الأسهم بـembeddings وتوقع متعدد الآفاق
-- [x] Baseline-aware evaluation + walk-forward folds + statistical significance testing / تقييم واعٍ بالمقياس المرجعي + فترات walk-forward + اختبار دلالة إحصائية
-- [ ] News/sentiment features (Arabic + English) / ميزات أخبار/معنويات (عربي وإنجليزي)
-- [ ] Macro indicators (rates, oil, FX) as auxiliary inputs / مؤشرات ماكرو (فوائد، نفط، عملات) كمدخلات مساعدة
-- [ ] Portfolio-level view across multiple held tickers / عرض على مستوى المحفظة عبر عدة أسهم
-- [ ] REST API endpoint alongside the Gradio UI / نقطة نهاية REST API جنب واجهة Gradio
+- [x] Shared multi-ticker model with embeddings + multi-horizon forecasting / نموذج مشترك متعدد الأسهم بتضمينات (embeddings) وتنبؤ متعدد الآفاق
+- [x] Baseline-aware evaluation + walk-forward folds + statistical significance testing / تقييمٌ واعٍ بالمقياس المرجعي + فترات walk-forward + اختبار دلالة إحصائية
+- [ ] News/sentiment features (Arabic + English) / ميزاتٌ مستخرجة من الأخبار والمعنويات (بالعربية والإنجليزية)
+- [ ] Macro indicators (rates, oil, FX) as auxiliary inputs / مؤشراتٌ كلية (أسعار الفائدة، النفط، العملات) كمدخلاتٍ مساعدة
+- [ ] Portfolio-level view across multiple held tickers / عرضٌ على مستوى المحفظة عبر عدة أسهم
+- [ ] REST API endpoint alongside the Gradio UI / نقطة نهاية REST API إلى جانب واجهة Gradio
 
 ---
 
@@ -420,10 +433,10 @@ Abu Dhabi Bank isn't on Yahoo Finance at all) → `EMAAR.AE`.
 > Markets involve real risk — always consult a qualified financial advisor
 > before making investment decisions.
 
-> **هذا المشروع لأغراض تعليمية وبحثية فقط.**
-> التوقعات اللي بينتجها الأداة دي **مش** نصيحة مالية.
-> الأسواق المالية فيها مخاطرة حقيقية — استشر دايمًا مستشار مالي مؤهّل قبل
-> ما تاخد أي قرار استثماري.
+> **هذا المشروع مُعدٌّ لأغراضٍ تعليميةٍ وبحثيةٍ فقط.**
+> التوقعات التي تُنتجها هذه الأداة **ليست** نصيحةً مالية.
+> تنطوي الأسواق المالية على مخاطرةٍ حقيقية — استشر دائمًا مستشارًا ماليًا
+> مؤهَّلًا قبل اتخاذ أي قرارٍ استثماري.
 
 ---
 
