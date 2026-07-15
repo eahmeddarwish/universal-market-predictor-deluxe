@@ -1,0 +1,48 @@
+{
+  "feature_cols": [
+    "RSI",
+    "MACD_pct",
+    "MACD_Signal_pct",
+    "BB_Upper_pct",
+    "BB_Lower_pct",
+    "BB_Width",
+    "ATR_pct",
+    "Daily_Return",
+    "Volatility_10d",
+    "Volume_Ratio",
+    "Price_vs_MA20",
+    "Price_vs_MA50"
+  ],
+  "look_back": 60,
+  "horizons": [
+    1,
+    3,
+    7
+  ],
+  "trained_tickers": [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "NVDA",
+    "TSLA",
+    "META",
+    "2222.SR",
+    "1120.SR",
+    "NBK.KW",
+    "KFH.KW",
+    "QNBK.QA",
+    "COMI.CA",
+    "EMAAR.AE",
+    "HSBA.L",
+    "BMW.DE",
+    "7203.T",
+    "0700.HK",
+    "RELIANCE.NS",
+    "BTC-USD",
+    "ETH-USD",
+    "SOL-USD",
+    "BNB-USD"
+  ],
+  "skipped_tickers": []
+}
