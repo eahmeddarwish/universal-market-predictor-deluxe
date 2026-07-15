@@ -42,34 +42,61 @@ import tensorflow as tf
 # <Layer>: {'quantization_config': None}". It hits EVERY layer type that
 # doesn't override from_config itself (Embedding, then Dense, then whichever
 # layer comes next), because they all fall through to the same base
-# implementation. Patching per-layer-type is whack-a-mole, so patch that one
-# shared base class instead -- fixes every layer at once, present and future.
-_layer_bases = [c for c in tf.keras.layers.Dense.__mro__ if c.__name__ == "Operation"]
-_OperationBase = _layer_bases[0] if _layer_bases else None
-
-if _OperationBase is not None:
-    _orig_operation_from_config = _OperationBase.from_config.__func__
-
+# implementation. Patching per-layer-type is whack-a-mole, so patch the
+# shared base class(es) instead -- fixes every layer at once, present and
+# future. We patch by TWO routes for robustness, since we've never been able
+# to confirm the installed Keras version's exact class hierarchy from a live
+# traceback: (1) tf.keras.layers.Layer -- a guaranteed, stable public name
+# that exists in every Keras version, and (2) an internal "Operation" base
+# class (present in newer Keras 3.x), found by walking the MRO, in case Layer
+# itself overrides from_config and the real fallthrough happens one level up.
+def _make_patched_from_config(orig_func):
     @classmethod
-    def _patched_operation_from_config(cls, config):
+    def _patched(cls, config):
         if isinstance(config, dict) and "quantization_config" in config:
             config = dict(config)
             config.pop("quantization_config", None)
-        return _orig_operation_from_config(cls, config)
+        return orig_func(cls, config)
+    return _patched
 
-    _OperationBase.from_config = _patched_operation_from_config
+
+_patch_targets = [tf.keras.layers.Layer]
+_patch_targets += [c for c in tf.keras.layers.Dense.__mro__ if c.__name__ == "Operation"]
+
+_patched_classes = set()
+for _cls in _patch_targets:
+    if _cls in _patched_classes:
+        continue
+    _orig = _cls.from_config
+    _orig_func = _orig.__func__ if hasattr(_orig, "__func__") else _orig
+    _cls.from_config = _make_patched_from_config(_orig_func)
+    _patched_classes.add(_cls)
 
 try:
     # Only present on Hugging Face Spaces configured with ZeroGPU hardware.
     # ZeroGPU refuses to start a Space unless at least one function is
     # decorated with @spaces.GPU -- it's how it knows which calls should get
-    # a temporary GPU attached. Falls back to a no-op decorator everywhere
-    # else (local runs, Colab, CPU-only Spaces) so this file works either way.
+    # a temporary GPU attached. IMPORTANT: we do NOT decorate run_analysis
+    # with this. ZeroGPU routes any @spaces.GPU-decorated call through a
+    # separate, ephemeral GPU worker subprocess -- if that subprocess dies
+    # (OOM, CUDA init issue, cold-start timeout, anything), the crash never
+    # reaches this file's own try/except, so the UI shows a bare "Error"
+    # with zero detail and the container logs for that worker are often
+    # unavailable or already rotated out by the time you go looking. Since
+    # CUDA_VISIBLE_DEVICES=-1 (above) already forces this app to CPU-only,
+    # there's nothing to gain from ZeroGPU here -- only fragility. So we
+    # keep a trivial, never-called dummy function decorated just to satisfy
+    # ZeroGPU's startup check, and let run_analysis run as a normal function
+    # in this same process, where its try/except can actually catch errors.
     import spaces
-    gpu_decorator = spaces.GPU
+
+    @spaces.GPU
+    def _zerogpu_keepalive():
+        """Never called from the UI. Exists only so ZeroGPU sees at least
+        one @spaces.GPU function during startup and doesn't refuse to boot."""
+        return True
 except ImportError:
-    def gpu_decorator(func):
-        return func
+    pass
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -153,7 +180,6 @@ def _cold_start_ticker(ticker: str, ds, progress_cb=None):
 PLACEHOLDER_PRESET = "(type custom ticker below)"
 
 
-@gpu_decorator
 def run_analysis(ticker_input, preset_choice, horizon_days, progress=gr.Progress()):
     preset_choice = preset_choice if preset_choice != PLACEHOLDER_PRESET else None
     ticker = (ticker_input or "").strip().upper() or preset_choice
